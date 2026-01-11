@@ -178,11 +178,11 @@ export function OrderTracking({ order, onArrived }: OrderTrackingProps) {
             </div>
           </div>
           
-          {order.vehicleInfo && (
+          {order.customerInfo && (
             <div className="bg-muted/50 rounded-lg p-3 text-sm">
-              <span className="text-muted-foreground">Seu veículo: </span>
+              <span className="text-muted-foreground">Cliente: </span>
               <span className="font-medium">
-                {order.vehicleInfo.model} {order.vehicleInfo.color} - {order.vehicleInfo.plate}
+                {order.customerInfo.name} - {order.customerInfo.phone}
               </span>
             </div>
           )}

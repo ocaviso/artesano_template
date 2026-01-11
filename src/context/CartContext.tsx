@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { CartItem, MenuItem, Order, VehicleInfo, DeliveryAddress } from '@/types';
+import { CartItem, MenuItem, Order, CustomerInfo, DeliveryAddress } from '@/types';
 
 interface CartContextType {
   items: CartItem[];
@@ -18,8 +18,8 @@ interface CartContextType {
   setDeliveryType: (type: 'delivery' | 'curbside') => void;
   deliveryAddress: DeliveryAddress | null;
   setDeliveryAddress: (address: DeliveryAddress | null) => void;
-  vehicleInfo: VehicleInfo | null;
-  setVehicleInfo: (info: VehicleInfo | null) => void;
+  customerInfo: CustomerInfo | null;
+  setCustomerInfo: (info: CustomerInfo | null) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -30,7 +30,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [deliveryType, setDeliveryType] = useState<'delivery' | 'curbside'>('delivery');
   const [deliveryAddress, setDeliveryAddress] = useState<DeliveryAddress | null>(null);
-  const [vehicleInfo, setVehicleInfo] = useState<VehicleInfo | null>(null);
+  const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
 
   const addItem = useCallback((item: MenuItem) => {
     setItems((prev) => {
@@ -97,8 +97,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setDeliveryType,
         deliveryAddress,
         setDeliveryAddress,
-        vehicleInfo,
-        setVehicleInfo,
+        customerInfo,
+        setCustomerInfo,
       }}
     >
       {children}
