@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     proxy: {
-      // Proxy existente para Orion (Pagamento)
+      // Proxy Pagamento (Orion)
       '/api/orion': {
         target: 'https://payapi.orion.moe',
         changeOrigin: true,
@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => ({
           });
         },
       },
-      // NOVO PROXY: OpenStreetMap (Geolocalização)
+      // Proxy Geolocalização (OpenStreetMap)
       '/api/nominatim': {
         target: 'https://nominatim.openstreetmap.org',
         changeOrigin: true,
@@ -29,13 +29,18 @@ export default defineConfig(({ mode }) => ({
         secure: false,
         configure: (proxy, _options) => {
           proxy.on('proxyReq', (proxyReq, req, _res) => {
-            // Remove origem para evitar bloqueio
             proxyReq.removeHeader('Origin');
             proxyReq.removeHeader('Referer');
-            // Nominatim exige User-Agent válido
             proxyReq.setHeader('User-Agent', 'SmashFastApp/1.0');
           });
         },
+      },
+      // NOVO PROXY: ViaCEP (Endereço)
+      '/api/viacep': {
+        target: 'https://viacep.com.br',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/viacep/, ''),
+        secure: false,
       },
     },
   },

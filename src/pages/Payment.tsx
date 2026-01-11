@@ -53,7 +53,7 @@ const Payment = () => {
         amount: finalTotal,
         name: customerInfo.name,
         email: customerInfo.email,
-        description: `Pedido SmashFast`,
+        description: `Pedido`,
       };
 
       // Adiciona opcionais apenas se existirem
@@ -231,7 +231,7 @@ const Payment = () => {
         {loading || !pixData ? (
           <div className="flex flex-col items-center justify-center py-12 gap-4">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Gerando PIX com a Orion...</p>
+            <p className="text-muted-foreground">Gerando PIX...</p>
           </div>
         ) : (
           <PixPayment

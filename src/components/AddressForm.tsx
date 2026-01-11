@@ -1,3 +1,4 @@
+import { useState } from 'react'; // Importar useState
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -5,7 +6,8 @@ import { useCart } from '@/context/CartContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { MapPin, User, Mail, Phone, FileText } from 'lucide-react';
+import { MapPin, User, Mail, Phone, FileText, Loader2 } from 'lucide-react'; // Importar Loader2
+import { useToast } from '@/hooks/use-toast'; // Importar Toast
 
 const addressSchema = z.object({
   // Dados do Cliente
@@ -15,12 +17,12 @@ const addressSchema = z.object({
   cpf: z.string().optional(),
 
   // Dados de Endereço
+  zipCode: z.string().min(8, 'CEP inválido').max(9), // Movido para cima na lógica visual
   street: z.string().min(3, 'Informe a rua'),
   number: z.string().min(1, 'Informe o número'),
   complement: z.string().optional(),
   neighborhood: z.string().min(2, 'Informe o bairro'),
   city: z.string().min(2, 'Informe a cidade'),
-  zipCode: z.string().min(8, 'CEP inválido').max(9),
 });
 
 type AddressFormData = z.infer<typeof addressSchema>;
@@ -31,10 +33,14 @@ interface AddressFormProps {
 
 export function AddressForm({ onSubmit }: AddressFormProps) {
   const { setDeliveryAddress, setCustomerInfo } = useCart();
+  const { toast } = useToast();
+  const [loadingCep, setLoadingCep] = useState(false); // Estado de loading
   
   const {
     register,
     handleSubmit,
+    setValue, // Usado para preencher os campos
+    setFocus, // Usado para focar no número após buscar
     formState: { errors, isValid },
   } = useForm<AddressFormData>({
     resolver: zodResolver(addressSchema),
@@ -44,17 +50,55 @@ export function AddressForm({ onSubmit }: AddressFormProps) {
       email: '',
       phone: '',
       cpf: '',
+      zipCode: '',
       street: '',
       number: '',
       complement: '',
       neighborhood: '',
       city: '',
-      zipCode: '',
     }
   });
 
+  // Função para buscar o CEP
+  const checkCEP = async (e: React.FocusEvent<HTMLInputElement>) => {
+    const cep = e.target.value.replace(/\D/g, '');
+
+    if (cep.length === 8) {
+      setLoadingCep(true);
+      try {
+        // Usa o proxy configurado no vite.config.ts
+        const response = await fetch(`/api/viacep/ws/${cep}/json/`);
+        const data = await response.json();
+
+        if (!data.erro) {
+          setValue('street', data.logradouro);
+          setValue('neighborhood', data.bairro);
+          // Combina cidade e UF para ficar mais completo
+          setValue('city', `${data.localidade} - ${data.uf}`);
+          
+          // Foca no campo número para o usuário continuar digitando
+          setFocus('number');
+        } else {
+          toast({
+            title: "CEP não encontrado",
+            description: "Verifique se o CEP está correto.",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao buscar CEP:", error);
+        toast({
+          title: "Erro na busca",
+          description: "Não foi possível buscar o CEP automaticamente.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoadingCep(false);
+      }
+    }
+  };
+
   const handleFormSubmit = (data: AddressFormData) => {
-    // Salva dados do cliente no contexto
     setCustomerInfo({
       name: data.name,
       email: data.email,
@@ -62,7 +106,6 @@ export function AddressForm({ onSubmit }: AddressFormProps) {
       cpf: data.cpf || undefined,
     });
 
-    // Salva endereço no contexto
     setDeliveryAddress({
       street: data.street,
       number: data.number,
@@ -151,12 +194,33 @@ export function AddressForm({ onSubmit }: AddressFormProps) {
           <h3 className="font-heading font-semibold">Endereço de Entrega</h3>
         </div>
 
+        {/* CAMPO DE CEP (MOVIDO PARA CIMA) */}
+        <div className="space-y-1.5">
+          <Label htmlFor="zipCode">CEP *</Label>
+          <div className="relative">
+            <Input
+              id="zipCode"
+              placeholder="00000-000"
+              {...register('zipCode')}
+              onBlur={checkCEP} // Dispara busca ao sair do campo
+              className={errors.zipCode ? 'border-destructive' : ''}
+              maxLength={9}
+            />
+            {loadingCep && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+              </div>
+            )}
+          </div>
+          {errors.zipCode && <p className="text-xs text-destructive">{errors.zipCode.message}</p>}
+        </div>
+
         <div className="grid grid-cols-3 gap-3">
           <div className="col-span-2 space-y-1.5">
             <Label htmlFor="street">Rua *</Label>
             <Input
               id="street"
-              placeholder="Nome da rua"
+              placeholder="Rua, Avenida..."
               {...register('street')}
               className={errors.street ? 'border-destructive' : ''}
             />
@@ -195,31 +259,21 @@ export function AddressForm({ onSubmit }: AddressFormProps) {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="zipCode">CEP *</Label>
+            <Label htmlFor="city">Cidade - UF *</Label>
             <Input
-              id="zipCode"
-              placeholder="00000-000"
-              {...register('zipCode')}
-              className={errors.zipCode ? 'border-destructive' : ''}
+              id="city"
+              placeholder="Cidade"
+              {...register('city')}
+              className={errors.city ? 'border-destructive' : ''}
             />
           </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="city">Cidade *</Label>
-          <Input
-            id="city"
-            placeholder="Cidade"
-            {...register('city')}
-            className={errors.city ? 'border-destructive' : ''}
-          />
         </div>
       </div>
 
       <Button
         type="submit"
         className="w-full gradient-primary border-0 shadow-food mt-4"
-        disabled={!isValid}
+        disabled={!isValid || loadingCep}
       >
         Continuar para Pagamento
       </Button>
