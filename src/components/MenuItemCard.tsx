@@ -32,11 +32,11 @@ export function MenuItemCard({ item }: MenuItemCardProps) {
     }
   };
 
-  return (
-    <Card className={cn(
-      "group overflow-hidden transition-all duration-300 hover:shadow-card",
-      quantity > 0 && "ring-2 ring-primary/50"
-    )}>
+return (
+  <Card className={cn(
+    "group overflow-hidden transition-all duration-300 hover:shadow-card flex flex-col h-full", // Adicionado flex-col e h-full
+    quantity > 0 && "ring-2 ring-primary/50"
+  )}>
       <div className="relative aspect-[4/3] bg-muted overflow-hidden">
         {/* CORREÇÃO: Substituído emojis pela tag img */}
         <img 
@@ -64,42 +64,49 @@ export function MenuItemCard({ item }: MenuItemCardProps) {
         )}
       </div>
       
-      <div className="p-4">
-        <h3 className="font-heading font-semibold text-base mb-1 line-clamp-1">
-          {item.name}
-        </h3>
-        <p className="text-sm text-muted-foreground line-clamp-2 mb-3 min-h-[40px]">
-          {item.description}
-        </p>
+      <div className="p-4 flex flex-col h-full"> {/* Adicionado flex flex-col h-full */}
+        <div className="flex-1"> {/* Conteúdo principal ocupa o espaço disponível */}
+          <h3 className="font-heading font-semibold text-base mb-1 line-clamp-2 leading-tight min-h-[2.5rem]"> {/* line-clamp-2 para títulos longos */}
+            {item.name}
+          </h3>
+          <p className="text-sm text-muted-foreground line-clamp-3 mb-4 min-h-[3.75rem]"> {/* Aumentado para 3 linhas e altura mínima */}
+            {item.description}
+          </p>
+        </div>
         
-        <div className="flex items-center justify-between gap-2">
-          <span className="font-heading font-bold text-lg text-primary">
-            R$ {item.price.toFixed(2).replace('.', ',')}
-          </span>
-          
+        {/* Bloco de Preço e Ação movido para baixo e reestruturado */}
+        <div className="mt-auto flex flex-col gap-3"> {/* mt-auto empurra para o fundo */}
+          <div className="flex items-center justify-between">
+            <span className="font-heading font-bold text-lg text-primary">
+              R$ {item.price.toFixed(2).replace('.', ',')}
+            </span>
+          </div>
+
           {quantity === 0 ? (
             <Button
               size="sm"
-              className="gap-1 gradient-primary border-0 shadow-food hover:opacity-90"
+              className="w-full gap-1 gradient-primary border-0 shadow-food hover:opacity-90" // w-full para botão cheio
               onClick={handleAdd}
             >
               <Plus className="w-4 h-4" />
               Adicionar
             </Button>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between bg-muted/30 rounded-lg p-1 border border-border"> {/* Container mais bonito para o contador */}
               <Button
                 size="icon"
-                variant="outline"
-                className="w-8 h-8"
+                variant="ghost"
+                className="w-8 h-8 hover:bg-background rounded-md text-muted-foreground"
                 onClick={handleDecrease}
               >
                 <Minus className="w-4 h-4" />
               </Button>
-              <span className="w-6 text-center font-semibold">{quantity}</span>
+              <span className="flex-1 text-center font-bold text-sm">
+                {quantity}
+              </span>
               <Button
                 size="icon"
-                className="w-8 h-8 gradient-primary border-0"
+                className="w-8 h-8 gradient-primary border-0 rounded-md text-primary-foreground shadow-sm"
                 onClick={handleIncrease}
               >
                 <Plus className="w-4 h-4" />

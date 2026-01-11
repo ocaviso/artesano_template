@@ -125,15 +125,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         try {
           const { latitude, longitude } = position.coords;
           
-          // API Gratuita do OpenStreetMap (Nominatim)
+          // --- Usando o Proxy configurado no vite.config.ts ---
           const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
-            {
-                headers: {
-                    'User-Agent': 'SmashFastApp/1.0' 
-                }
-            }
+            `/api/nominatim/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
           );
+          // -------------------------------------------------------------------
 
           if (!response.ok) throw new Error('Erro ao buscar endereço');
 
