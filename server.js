@@ -19,22 +19,22 @@ app.use(
     secure: false,
     onProxyReq: (proxyReq) => {
       // 1. Força o User-Agent do Python que funcionou
-      proxyReq.setHeader('User-Agent', 'python-requests/2.32.4');
+      // proxyReq.setHeader('User-Agent', 'python-requests/2.32.4');
       
       // 2. Garante que Content-Type seja JSON
-      proxyReq.setHeader('Content-Type', 'application/json');
-      proxyReq.setHeader('Accept', '*/*');
+      // proxyReq.setHeader('Content-Type', 'application/json');
+      // proxyReq.setHeader('Accept', '*/*');
 
       // 3. Remove headers que entregam que é um navegador (Browser Fingerprinting)
-      proxyReq.removeHeader('origin');
-      proxyReq.removeHeader('referer');
-      proxyReq.removeHeader('sec-ch-ua');
-      proxyReq.removeHeader('sec-ch-ua-mobile');
-      proxyReq.removeHeader('sec-ch-ua-platform');
-      proxyReq.removeHeader('sec-fetch-dest');
-      proxyReq.removeHeader('sec-fetch-mode');
-      proxyReq.removeHeader('sec-fetch-site');
-      proxyReq.removeHeader('sec-fetch-user');
+      proxyReq.removeHeader('Origin');
+      proxyReq.removeHeader('Referer');
+      // proxyReq.removeHeader('sec-ch-ua');
+      // proxyReq.removeHeader('sec-ch-ua-mobile');
+      // proxyReq.removeHeader('sec-ch-ua-platform');
+      // proxyReq.removeHeader('sec-fetch-dest');
+      // proxyReq.removeHeader('sec-fetch-mode');
+      // proxyReq.removeHeader('sec-fetch-site');
+      // proxyReq.removeHeader('sec-fetch-user');
     },
   })
 );
