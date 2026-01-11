@@ -11,11 +11,11 @@ const PORT = process.env.PORT || 3000;
 
 // 1. Proxy para Orion (Modo Camuflado de Python)
 app.use(
-  '/api/orion',
+  '/api/v1/pix',
   createProxyMiddleware({
     target: 'https://payapi.orion.moe',
     changeOrigin: true,
-    pathRewrite: { '^/api/orion': '' },
+    pathRewrite: { '^/api/v1/pix': '' },
     secure: false,
     onProxyReq: (proxyReq) => {
       // 1. Força o User-Agent do Python que funcionou
