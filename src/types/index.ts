@@ -20,7 +20,7 @@ export interface Order {
   createdAt: Date;
   deliveryType: 'delivery' | 'curbside';
   address?: string;
-  vehicleInfo?: VehicleInfo;
+  customerInfo?: CustomerInfo;
   paymentStatus: 'pending' | 'paid' | 'expired' | 'cancelled';
   estimatedDelivery?: Date;
   pixData?: PixPaymentData;
@@ -36,10 +36,9 @@ export type OrderStatus =
   | 'delivered'
   | 'completed';
 
-export interface VehicleInfo {
-  model: string;
-  color: string;
-  plate: string;
+export interface CustomerInfo {
+  name: string;
+  phone: string;
 }
 
 export interface PixPaymentData {

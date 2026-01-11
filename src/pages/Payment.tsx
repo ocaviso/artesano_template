@@ -15,7 +15,7 @@ const Payment = () => {
     total, 
     deliveryType, 
     deliveryAddress, 
-    vehicleInfo,
+    customerInfo,
     clearCart,
     setCurrentOrder,
     addOrder
@@ -48,7 +48,7 @@ const Payment = () => {
       address: deliveryAddress ? 
         `${deliveryAddress.street}, ${deliveryAddress.number} - ${deliveryAddress.neighborhood}` : 
         undefined,
-      vehicleInfo: vehicleInfo || undefined,
+      customerInfo: customerInfo || undefined,
       paymentStatus: 'paid',
       estimatedDelivery: new Date(Date.now() + estimatedMinutes * 60 * 1000),
       pixData,
@@ -64,7 +64,7 @@ const Payment = () => {
     });
 
     navigate('/tracking');
-  }, [items, finalTotal, deliveryType, deliveryAddress, vehicleInfo, pixData, addOrder, setCurrentOrder, clearCart, toast, navigate]);
+  }, [items, finalTotal, deliveryType, deliveryAddress, customerInfo, pixData, addOrder, setCurrentOrder, clearCart, toast, navigate]);
 
   const handleExpired = useCallback(() => {
     toast({

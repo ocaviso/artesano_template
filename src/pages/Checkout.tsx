@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { DeliveryTypeSelector } from '@/components/DeliveryTypeSelector';
 import { AddressForm } from '@/components/AddressForm';
-import { VehicleForm } from '@/components/VehicleForm';
+import { CustomerForm } from '@/components/CustomerForm';
 import { useCart } from '@/context/CartContext';
 
 const Checkout = () => {
@@ -82,7 +82,7 @@ const Checkout = () => {
           {deliveryType === 'delivery' ? (
             <AddressForm onSubmit={handleFormSubmit} />
           ) : (
-            <VehicleForm onSubmit={handleFormSubmit} />
+            <CustomerForm onSubmit={handleFormSubmit} />
           )}
         </Card>
       </div>
