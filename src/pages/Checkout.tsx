@@ -7,13 +7,16 @@ import { Separator } from '@/components/ui/separator';
 import { DeliveryTypeSelector } from '@/components/DeliveryTypeSelector';
 import { AddressForm } from '@/components/AddressForm';
 import { CustomerForm } from '@/components/CustomerForm';
+import { StoreMap } from '@/components/StoreMap'; // Componente que você já criou
 import { useCart } from '@/context/CartContext';
+import { useToast } from '@/hooks/use-toast';
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const { items, total, deliveryType } = useCart();
-  const [showPayment, setShowPayment] = useState(false);
-
+  const { toast } = useToast();
+  const { items, total, deliveryType, selectedStore } = useCart();
+  
+  // Taxa de entrega (Grátis para retirada)
   const deliveryFee = deliveryType === 'delivery' ? 5.90 : 0;
   const finalTotal = total + deliveryFee;
 
@@ -23,6 +26,16 @@ const Checkout = () => {
   }
 
   const handleFormSubmit = () => {
+    // Validação extra para retirada
+    if (deliveryType === 'curbside' && !selectedStore) {
+        toast({
+            title: "Selecione uma loja",
+            description: "Por favor, escolha no mapa onde deseja retirar seu pedido.",
+            variant: "destructive"
+        });
+        return;
+    }
+    // Se passou na validação do formulário (que chama essa função) e da loja, vai para pagamento
     navigate('/payment');
   };
 
@@ -77,12 +90,20 @@ const Checkout = () => {
           <DeliveryTypeSelector />
         </div>
 
-        {/* Address or Vehicle Form */}
+        {/* Dynamic Forms */}
         <Card className="p-4">
           {deliveryType === 'delivery' ? (
+            // Formulário de Entrega (Endereço + Dados Pessoais)
             <AddressForm onSubmit={handleFormSubmit} />
           ) : (
-            <CustomerForm onSubmit={handleFormSubmit} />
+            // Fluxo de Retirada (Mapa + Dados Pessoais)
+            <div className="space-y-6">
+              <StoreMap /> 
+              
+              <Separator />
+              
+              <CustomerForm onSubmit={handleFormSubmit} />
+            </div>
           )}
         </Card>
       </div>

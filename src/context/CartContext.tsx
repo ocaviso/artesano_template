@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { CartItem, MenuItem, Order, CustomerInfo, DeliveryAddress } from '@/types';
-import { useToast } from '@/hooks/use-toast'; // Importação adicionada
+import { useToast } from '@/hooks/use-toast';
+import { Store } from '@/data/stores'; // Importar a tipagem da loja
 
 interface CartContextType {
   items: CartItem[];
@@ -22,10 +23,14 @@ interface CartContextType {
   customerInfo: CustomerInfo | null;
   setCustomerInfo: (info: CustomerInfo | null) => void;
   
-  // --- NOVOS CAMPOS DE GEOLOCALIZAÇÃO ---
+  // CAMPOS DE GEOLOCALIZAÇÃO
   userLocation: string | null;
   detectUserLocation: () => Promise<void>;
   isLocating: boolean;
+
+  // NOVO: CAMPOS DE LOJA
+  selectedStore: Store | null;
+  setSelectedStore: (store: Store | null) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -33,9 +38,9 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 const STORAGE_KEY = '@SmashFast:cart-v1';
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const { toast } = useToast(); // Hook para notificações
+  const { toast } = useToast();
 
-  // Inicialização Lazy
+  // Inicialização Lazy (Persistência)
   const [items, setItems] = useState<CartItem[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -52,10 +57,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [deliveryAddress, setDeliveryAddress] = useState<DeliveryAddress | null>(null);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
 
-  // --- NOVOS STATES ---
+  // States de Geolocalização
   const [userLocation, setUserLocation] = useState<string | null>(null);
   const [isLocating, setIsLocating] = useState(false);
 
+  // Novo State de Loja
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+
+  // Efeito de Persistência
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items]);
@@ -107,7 +116,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentOrder]);
 
-  // --- NOVA FUNÇÃO: DETECTAR LOCALIZAÇÃO ---
+  // Função de Geolocalização
   const detectUserLocation = useCallback(async () => {
     if (!('geolocation' in navigator)) {
       toast({
@@ -125,18 +134,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         try {
           const { latitude, longitude } = position.coords;
           
-          // --- Usando o Proxy configurado no vite.config.ts ---
+          // Usando Proxy para evitar CORS
           const response = await fetch(
             `/api/nominatim/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
           );
-          // -------------------------------------------------------------------
 
           if (!response.ok) throw new Error('Erro ao buscar endereço');
 
           const data = await response.json();
           const address = data.address;
           
-          // Formata o endereço de forma inteligente
           const locationName = address.suburb || address.neighbourhood || address.city_district || address.city || address.town || "Minha Localização";
           const state = address.state_code || address.city || address.town || ""; 
 
@@ -188,10 +195,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setDeliveryAddress,
         customerInfo,
         setCustomerInfo,
-        // Novos valores expostos
         userLocation,
         detectUserLocation,
-        isLocating
+        isLocating,
+        // Novos
+        selectedStore,
+        setSelectedStore
       }}
     >
       {children}
