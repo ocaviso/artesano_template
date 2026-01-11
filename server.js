@@ -9,7 +9,13 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 1. Proxy para Orion (Modo Camuflado de Python)
+// Middleware de Log Geral (Para ver se a requisição chega no Node)
+app.use((req, res, next) => {
+  console.log(`[REQUEST] ${req.method} ${req.url}`);
+  next();
+});
+
+// 1. Proxy para Orion (Com Logs Detalhados)
 app.use(
   '/api/orion',
   createProxyMiddleware({
@@ -17,29 +23,43 @@ app.use(
     changeOrigin: true,
     pathRewrite: { '^/api/orion': '' },
     secure: false,
-    onProxyReq: (proxyReq) => {
-      // 1. Força o User-Agent do Python que funcionou
-      // proxyReq.setHeader('User-Agent', 'python-requests/2.32.4');
-      
-      // 2. Garante que Content-Type seja JSON
-      // proxyReq.setHeader('Content-Type', 'application/json');
-      // proxyReq.setHeader('Accept', '*/*');
-
-      // 3. Remove headers que entregam que é um navegador (Browser Fingerprinting)
+    onProxyReq: (proxyReq, req, res) => {
+      // --- LIMPEZA DE HEADERS (TENTATIVA DE ENGANAR O CORS) ---
       proxyReq.removeHeader('Origin');
       proxyReq.removeHeader('Referer');
-      // proxyReq.removeHeader('sec-ch-ua');
-      // proxyReq.removeHeader('sec-ch-ua-mobile');
-      // proxyReq.removeHeader('sec-ch-ua-platform');
-      // proxyReq.removeHeader('sec-fetch-dest');
-      // proxyReq.removeHeader('sec-fetch-mode');
-      // proxyReq.removeHeader('sec-fetch-site');
-      // proxyReq.removeHeader('sec-fetch-user');
+      proxyReq.removeHeader('Cookie'); // Cookies as vezes bloqueiam
+      
+      // Remove headers que identificam o browser (Sec-*)
+      // Navegadores modernos mandam isso e APIs antigas bloqueiam
+      proxyReq.removeHeader('sec-ch-ua');
+      proxyReq.removeHeader('sec-ch-ua-mobile');
+      proxyReq.removeHeader('sec-ch-ua-platform');
+      proxyReq.removeHeader('sec-fetch-dest');
+      proxyReq.removeHeader('sec-fetch-mode');
+      proxyReq.removeHeader('sec-fetch-site');
+      proxyReq.removeHeader('sec-fetch-user');
+
+      // Força headers de "Servidor para Servidor"
+      proxyReq.setHeader('User-Agent', 'python-requests/2.32.4'); // Mimic Python
+      proxyReq.setHeader('Accept', '*/*');
+      proxyReq.setHeader('Content-Type', 'application/json');
+
+      // --- LOGS DE DEBUG (APARECERÃO NO RENDER) ---
+      console.log('--- [DEBUG PROXY ORION] ---');
+      console.log('URL Original (React):', req.url);
+      console.log('Caminho no Target:', proxyReq.path);
+      console.log('HEADERS ENVIADOS PARA ORION:');
+      console.log(proxyReq.getHeaders());
+      console.log('-----------------------------');
     },
+    onError: (err, req, res) => {
+      console.error('--- [ERRO PROXY] ---', err);
+      res.status(500).send('Proxy Error');
+    }
   })
 );
 
-// 2. Proxy para Nominatim (Geolocalização)
+// 2. Proxy para Nominatim
 app.use(
   '/api/nominatim',
   createProxyMiddleware({
@@ -55,7 +75,7 @@ app.use(
   })
 );
 
-// 3. Proxy para ViaCEP (Endereço)
+// 3. Proxy para ViaCEP
 app.use(
   '/api/viacep',
   createProxyMiddleware({
@@ -69,7 +89,7 @@ app.use(
 // 4. Arquivos estáticos
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// 5. Fallback para SPA
+// 5. Fallback SPA
 app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
