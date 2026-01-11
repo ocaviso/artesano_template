@@ -5,7 +5,16 @@ declare global {
     }
   }
   
+  const PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID;
+
   export const pixel = {
+
+    init: () => {
+        // Lógica de inicialização se necessário, ou apenas deixe o fbq global
+        // Geralmente o script base fica no index.html, mas podemos injetar o ID lá
+        console.log("Pixel ID carregado:", PIXEL_ID);
+     },
+         
     // Rastreia visualização de página
     pageView: () => {
       if (typeof window !== 'undefined' && window.fbq) {
