@@ -15,15 +15,15 @@ app.use(
   createProxyMiddleware({
     target: 'https://payapi.orion.moe',
     changeOrigin: true,
-    pathRewrite: { '^/api/v1/pix': '' },
+    // pathRewrite: { '^/api/v1/pix': '' },
     secure: false,
     onProxyReq: (proxyReq) => {
       // 1. Força o User-Agent do Python que funcionou
       // proxyReq.setHeader('User-Agent', 'python-requests/2.32.4');
       
       // 2. Garante que Content-Type seja JSON
-      // proxyReq.setHeader('Content-Type', 'application/json');
-      // proxyReq.setHeader('Accept', '*/*');
+      proxyReq.setHeader('Content-Type', 'application/json');
+      proxyReq.setHeader('Accept', '*/*');
 
       // 3. Remove headers que entregam que é um navegador (Browser Fingerprinting)
       proxyReq.removeHeader('Origin');
