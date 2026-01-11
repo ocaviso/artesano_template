@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 1. Configura o Proxy para a Orion
+// 1. Proxy para Orion (Pagamento)
 app.use(
   '/api/orion',
   createProxyMiddleware({
@@ -18,14 +18,15 @@ app.use(
     pathRewrite: { '^/api/orion': '' },
     secure: false,
     onProxyReq: (proxyReq) => {
+      // Removemos Origin e Referer para tentar passar pelo bloqueio de CORS
       proxyReq.removeHeader('Origin');
       proxyReq.removeHeader('Referer');
-      proxyReq.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
+      // REMOVIDO O USER-AGENT CONFORME SOLICITADO
     },
   })
 );
 
-// 2. Configura o Proxy para o Nominatim (Geolocalização)
+// 2. Proxy para Nominatim (Geolocalização)
 app.use(
   '/api/nominatim',
   createProxyMiddleware({
@@ -41,11 +42,21 @@ app.use(
   })
 );
 
-// 3. Serve os arquivos estáticos do React (pasta dist)
+// 3. NOVO: Proxy para ViaCEP (Endereço)
+app.use(
+  '/api/viacep',
+  createProxyMiddleware({
+    target: 'https://viacep.com.br',
+    changeOrigin: true,
+    pathRewrite: { '^/api/viacep': '' },
+    secure: false,
+  })
+);
+
+// 4. Arquivos estáticos
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// 4. Redireciona qualquer outra rota para o index.html (SPA Fallback)
-// CORREÇÃO AQUI: Mudamos '*' para o regex /.*/ para evitar o erro do path-to-regexp
+// 5. Fallback para SPA (Regex corrigido para evitar erro no Render)
 app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
