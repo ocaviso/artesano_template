@@ -22,8 +22,8 @@ app.use(
       // proxyReq.setHeader('User-Agent', 'python-requests/2.32.4');
       
       // 2. Garante que Content-Type seja JSON
-      proxyReq.setHeader('Content-Type', 'application/json');
-      proxyReq.setHeader('Accept', '*/*');
+      // proxyReq.setHeader('Content-Type', 'application/json');
+      // proxyReq.setHeader('Accept', '*/*');
 
       // 3. Remove headers que entregam que é um navegador (Browser Fingerprinting)
       proxyReq.removeHeader('Origin');
