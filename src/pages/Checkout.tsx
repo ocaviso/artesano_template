@@ -10,6 +10,8 @@ import { CustomerForm } from '@/components/CustomerForm';
 import { StoreMap } from '@/components/StoreMap'; // Componente que você já criou
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/hooks/use-toast';
+import { useEffect } from 'react'; // Adicione useEffect
+import { pixel } from '@/lib/pixel'; // Importe o utilitário
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -19,6 +21,18 @@ const Checkout = () => {
   // Taxa de entrega (Grátis para retirada)
   const deliveryFee = deliveryType === 'delivery' ? 5.90 : 0;
   const finalTotal = total + deliveryFee;
+
+  // --- Dispara evento ao entrar na tela ---
+  useEffect(() => {
+    if (items.length > 0) {
+      pixel.initiateCheckout({
+        value: finalTotal,
+        currency: 'BRL',
+        num_items: items.length,
+        content_ids: items.map(item => item.id)
+      });
+    }
+  }, []);
 
   if (items.length === 0) {
     navigate('/');

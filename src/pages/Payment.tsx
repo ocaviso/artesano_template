@@ -6,6 +6,7 @@ import { PixPayment } from '@/components/PixPayment';
 import { useCart } from '@/context/CartContext';
 import { Order, PixPaymentData } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { pixel } from '@/lib/pixel'; // Importe o utilitário
 
 // Configuração do Proxy
 const PROXY_URL = "/api/orion/api/v1/pix"; 
@@ -53,7 +54,7 @@ const Payment = () => {
         amount: finalTotal,
         name: customerInfo.name,
         email: customerInfo.email,
-        description: `Pedido`,
+        description: `Pedido-${Date.now().toString(36).toUpperCase()} - ${customerInfo.name} - ${customerInfo.email} - ${customerInfo.phone || ''}`,
       };
 
       // Adiciona opcionais apenas se existirem
@@ -127,6 +128,18 @@ const Payment = () => {
     }
     isPollingActive.current = false;
 
+    // --- MARCAÇÃO DO CLIENTE ---
+    // Assim que isso for salvo, o RedirectHandler vai capturar na próxima renderização/navegação
+    localStorage.setItem('@SmashFast:purchase-complete', 'true');
+
+    // --- Dispara evento de Compra ---
+    pixel.purchase({
+      value: finalTotal,
+      currency: 'BRL',
+      content_ids: items.map(item => item.id),
+      content_type: 'product'
+    });
+    
     const orderId = `ORD-${Date.now().toString(36).toUpperCase()}`;
     const estimatedMinutes = deliveryType === 'delivery' ? 45 : 20; // Ajuste de estimativa
     

@@ -10,9 +10,25 @@ import Checkout from "./pages/Checkout";
 import Payment from "./pages/Payment";
 import Tracking from "./pages/Tracking";
 import NotFound from "./pages/NotFound";
+import { RedirectHandler } from "@/components/RedirectHandler"; // Componente de Bloqueio
+import { pixel } from "@/lib/pixel"; // Importe o utilitário
+import { useEffect } from 'react'; // Adicione useEffect
+import { useLocation } from "react-router-dom";
+
 
 const queryClient = new QueryClient();
 
+function PixelTracker() {
+  const location = useLocation();
+
+  useEffect(() => {
+    pixel.pageView();
+  }, [location]);
+
+  return null;
+}
+
+// Componente para rastrear mudanças de rota
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -20,6 +36,9 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          {/* O Handler fica aqui para vigiar todas as rotas */}
+          <RedirectHandler />   
+          <PixelTracker />     
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/cart" element={<Cart />} />
