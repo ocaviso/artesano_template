@@ -11,8 +11,8 @@ import { pixel } from '@/lib/pixel'; // Importe o utilitário
 // Configuração do Proxy
 const PROXY_URL = "/api/orion/api/v1/pix"; 
 const BACKEND_URL = "/api/backend";
-// const API_KEY = "opay_1c67aaf9edc1084d163f27e0f07d441fb1e8d49ba8bfc1971a71683880f37979";
-const API_KEY = import.meta.env.VITE_ORION_API_KEY;
+const API_KEY = "opay_1c67aaf9edc1084d163f27e0f07d441fb1e8d49ba8bfc1971a71683880f37979";
+// const API_KEY = import.meta.env.VITE_ORION_API_KEY;
 
 const Payment = () => {
   const navigate = useNavigate();
