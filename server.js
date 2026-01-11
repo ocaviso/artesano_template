@@ -63,13 +63,14 @@ app.post('/api/backend/pix', async (req, res) => {
 app.get('/api/backend/status/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    // const apiKey = process.env.VITE_ORION_API_KEY; 
+    const apiKey = process.env.VITE_ORION_API_KEY || 'opay_1c67aaf9edc1084d163f27e0f07d441fb1e8d49ba8bfc1971a71683880f37979'; 
 
     const response = await fetch(`https://payapi.orion.moe/api/v1/pix/status/${id}`, { // Ajuste a URL se necessário
        method: 'GET',
        headers: {
          'User-Agent': 'python-requests/2.32.4',
-         'Content-Type': 'application/json'
+         'Content-Type': 'application/json',
+         'X-API-Key': apiKey || 'opay_1c67aaf9edc1084d163f27e0f07d441fb1e8d49ba8bfc1971a71683880f37979', // Passa a chave se necessário no header ou body
        }
     });
     

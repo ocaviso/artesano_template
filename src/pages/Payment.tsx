@@ -9,10 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { pixel } from '@/lib/pixel'; // Importe o utilitário
 
 // Configuração do Proxy
-const PROXY_URL = "/api/orion/api/v1/pix"; 
 const BACKEND_URL = "/api/backend";
-const API_KEY = "opay_1c67aaf9edc1084d163f27e0f07d441fb1e8d49ba8bfc1971a71683880f37979";
-// const API_KEY = import.meta.env.VITE_ORION_API_KEY;
 
 const Payment = () => {
   const navigate = useNavigate();
@@ -194,11 +191,10 @@ const Payment = () => {
 
     const checkStatus = async () => {
       try {
-        const response = await fetch(`${PROXY_URL}/status/${pixData.transactionId}`, {
+        const response = await fetch(`${BACKEND_URL}/status/${pixData.transactionId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'X-API-Key': API_KEY
           }
         });
 
