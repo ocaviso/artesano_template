@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 1. Proxy para Orion (Pagamento)
+// 1. Proxy para Orion (Modo Camuflado de Python)
 app.use(
   '/api/orion',
   createProxyMiddleware({
@@ -18,10 +18,23 @@ app.use(
     pathRewrite: { '^/api/orion': '' },
     secure: false,
     onProxyReq: (proxyReq) => {
-      // Removemos Origin e Referer para tentar passar pelo bloqueio de CORS
-      proxyReq.removeHeader('Origin');
-      proxyReq.removeHeader('Referer');
-      // REMOVIDO O USER-AGENT CONFORME SOLICITADO
+      // 1. Força o User-Agent do Python que funcionou
+      proxyReq.setHeader('User-Agent', 'python-requests/2.32.4');
+      
+      // 2. Garante que Content-Type seja JSON
+      proxyReq.setHeader('Content-Type', 'application/json');
+      proxyReq.setHeader('Accept', '*/*');
+
+      // 3. Remove headers que entregam que é um navegador (Browser Fingerprinting)
+      proxyReq.removeHeader('origin');
+      proxyReq.removeHeader('referer');
+      proxyReq.removeHeader('sec-ch-ua');
+      proxyReq.removeHeader('sec-ch-ua-mobile');
+      proxyReq.removeHeader('sec-ch-ua-platform');
+      proxyReq.removeHeader('sec-fetch-dest');
+      proxyReq.removeHeader('sec-fetch-mode');
+      proxyReq.removeHeader('sec-fetch-site');
+      proxyReq.removeHeader('sec-fetch-user');
     },
   })
 );
@@ -42,7 +55,7 @@ app.use(
   })
 );
 
-// 3. NOVO: Proxy para ViaCEP (Endereço)
+// 3. Proxy para ViaCEP (Endereço)
 app.use(
   '/api/viacep',
   createProxyMiddleware({
@@ -56,7 +69,7 @@ app.use(
 // 4. Arquivos estáticos
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// 5. Fallback para SPA (Regex corrigido para evitar erro no Render)
+// 5. Fallback para SPA
 app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
