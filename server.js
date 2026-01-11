@@ -1,4 +1,3 @@
-// server.js
 import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import path from 'path';
@@ -10,7 +9,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 1. Configura o Proxy para a Orion (Copia do que fizemos no Vite)
+// 1. Configura o Proxy para a Orion
 app.use(
   '/api/orion',
   createProxyMiddleware({
@@ -19,10 +18,8 @@ app.use(
     pathRewrite: { '^/api/orion': '' },
     secure: false,
     onProxyReq: (proxyReq) => {
-      // O Pulo do Gato para o CORS em produção
       proxyReq.removeHeader('Origin');
       proxyReq.removeHeader('Referer');
-      // Adicionar User-Agent genérico por segurança
       proxyReq.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
     },
   })
@@ -47,8 +44,9 @@ app.use(
 // 3. Serve os arquivos estáticos do React (pasta dist)
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// 4. Redireciona qualquer outra rota para o index.html (para o React Router funcionar)
-app.get('*', (req, res) => {
+// 4. Redireciona qualquer outra rota para o index.html (SPA Fallback)
+// CORREÇÃO AQUI: Mudamos '*' para o regex /.*/ para evitar o erro do path-to-regexp
+app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
