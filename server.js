@@ -9,55 +9,76 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware de Log Geral (Para ver se a requisição chega no Node)
+// Middleware para ler JSON do corpo da requisição (IMPORTANTE)
+app.use(express.json());
+
+// LOG GERAL
 app.use((req, res, next) => {
   console.log(`[REQUEST] ${req.method} ${req.url}`);
   next();
 });
 
-// 1. Proxy para Orion (Com Logs Detalhados)
-app.use(
-  '/api/orion',
-  createProxyMiddleware({
-    target: 'https://payapi.orion.moe',
-    changeOrigin: true,
-    pathRewrite: { '^/api/orion': '' },
-    secure: false,
-    onProxyReq: (proxyReq, req, res) => {
-      // --- LIMPEZA DE HEADERS (TENTATIVA DE ENGANAR O CORS) ---
-      proxyReq.removeHeader('Origin');
-      proxyReq.removeHeader('Referer');
-      proxyReq.removeHeader('Cookie'); // Cookies as vezes bloqueiam
-      
-      // Remove headers que identificam o browser (Sec-*)
-      // Navegadores modernos mandam isso e APIs antigas bloqueiam
-      proxyReq.removeHeader('sec-ch-ua');
-      proxyReq.removeHeader('sec-ch-ua-mobile');
-      proxyReq.removeHeader('sec-ch-ua-platform');
-      proxyReq.removeHeader('sec-fetch-dest');
-      proxyReq.removeHeader('sec-fetch-mode');
-      proxyReq.removeHeader('sec-fetch-site');
-      proxyReq.removeHeader('sec-fetch-user');
+// --- ROTA DE PAGAMENTO MANUAL (SEM PROXY MIDDLEWARE) ---
+// O React chama isso, e o Node chama a Orion. Sem vazamento de headers.
+app.post('/api/backend/pix', async (req, res) => {
+  try {
+    const payload = req.body;
+    const apiKey = process.env.VITE_ORION_API_KEY; // O Render injeta isso
 
-      // Força headers de "Servidor para Servidor"
-      proxyReq.setHeader('User-Agent', 'python-requests/2.32.4'); // Mimic Python
-      proxyReq.setHeader('Accept', '*/*');
-      proxyReq.setHeader('Content-Type', 'application/json');
+    console.log('--- [BACKEND] Iniciando pagamento manual ---');
+    console.log('Payload recebido:', payload);
 
-      // --- LOGS DE DEBUG (APARECERÃO NO RENDER) ---
-      console.log('--- [DEBUG PROXY ORION] ---');
-      console.log('URL Original (React):', req.url);
-      console.log('Caminho no Target:', proxyReq.path);
-      console.log('HEADERS ENVIADOS PARA ORION:');
-      console.log(proxyReq.getHeaders());
-      console.log('-----------------------------');
-    },
-    onError: (err, req, res) => {
-      console.error('--- [ERRO PROXY] ---', err);
-      res.status(500).send('Proxy Error');
+    // Chamada Server-to-Server (Igual ao Python)
+    const orionResponse = await fetch('https://payapi.orion.moe/api/v1/pix/personal', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'python-requests/2.32.4', // Camuflagem
+        'X-API-Key': apiKey || '', // Passa a chave se necessário no header ou body
+        // Note: Não enviamos Origin nem Referer aqui. É uma chamada limpa.
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const responseText = await orionResponse.text();
+    console.log('[BACKEND] Status Orion:', orionResponse.status);
+    console.log('[BACKEND] Resposta Orion:', responseText);
+
+    // Tenta parsear JSON
+    try {
+      const data = JSON.parse(responseText);
+      // Repassa o status e o JSON para o React
+      res.status(orionResponse.status).json(data);
+    } catch (e) {
+      res.status(orionResponse.status).send(responseText);
     }
-  })
-);
+
+  } catch (error) {
+    console.error('[BACKEND] Erro Fatal:', error);
+    res.status(500).json({ error: 'Erro interno no servidor Node', details: error.message });
+  }
+});
+
+// --- ROTA DE STATUS MANUAL ---
+app.get('/api/backend/status/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    // const apiKey = process.env.VITE_ORION_API_KEY; 
+
+    const response = await fetch(`https://payapi.orion.moe/api/v1/pix/status/${id}`, { // Ajuste a URL se necessário
+       method: 'GET',
+       headers: {
+         'User-Agent': 'python-requests/2.32.4',
+         'Content-Type': 'application/json'
+       }
+    });
+    
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // 2. Proxy para Nominatim
 app.use(

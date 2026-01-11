@@ -10,6 +10,7 @@ import { pixel } from '@/lib/pixel'; // Importe o utilitário
 
 // Configuração do Proxy
 const PROXY_URL = "/api/orion/api/v1/pix"; 
+const BACKEND_URL = "/api/backend";
 // const API_KEY = "opay_1c67aaf9edc1084d163f27e0f07d441fb1e8d49ba8bfc1971a71683880f37979";
 const API_KEY = import.meta.env.VITE_ORION_API_KEY;
 
@@ -65,11 +66,20 @@ const Payment = () => {
       console.log("🔵 [Payment] Iniciando criação do PIX. Payload:", payload);
 
       // Usando rota /personal (conforme sucesso no Python)
-      const response = await fetch(`${PROXY_URL}/personal`, {
+      // const response = await fetch(`${PROXY_URL}/personal`, {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //     'X-API-Key': API_KEY
+      //   },
+      //   body: JSON.stringify(payload)
+      // });
+      const response = await fetch(`${BACKEND_URL}/pix`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': API_KEY
+          'Content-Type': 'application/json'
+          // Não precisa mandar API KEY aqui se o server.js ler do process.env
+          // Se precisar passar, adicione headers aqui
         },
         body: JSON.stringify(payload)
       });
