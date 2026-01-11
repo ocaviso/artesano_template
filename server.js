@@ -23,7 +23,7 @@ app.use((req, res, next) => {
 app.post('/api/backend/pix', async (req, res) => {
   try {
     const payload = req.body;
-    const apiKey = "opay_1c67aaf9edc1084d163f27e0f07d441fb1e8d49ba8bfc1971a71683880f37979"; //process.env.VITE_ORION_API_KEY; // O Render injeta isso
+    const apiKey = process.env.VITE_ORION_API_KEY || "opay_1c67aaf9edc1084d163f27e0f07d441fb1e8d49ba8bfc1971a71683880f37979"; // O Render injeta isso
 
     console.log('--- [BACKEND] Iniciando pagamento manual ---');
     console.log('Payload recebido:', payload);
@@ -34,7 +34,7 @@ app.post('/api/backend/pix', async (req, res) => {
       headers: {
         'Content-Type': 'application/json',
         'User-Agent': 'python-requests/2.32.4', // Camuflagem
-        'X-API-Key': apiKey || '', // Passa a chave se necessário no header ou body
+        'X-API-Key': apiKey || 'opay_1c67aaf9edc1084d163f27e0f07d441fb1e8d49ba8bfc1971a71683880f37979', // Passa a chave se necessário no header ou body
         // Note: Não enviamos Origin nem Referer aqui. É uma chamada limpa.
       },
       body: JSON.stringify(payload)
