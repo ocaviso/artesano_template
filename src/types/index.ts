@@ -38,16 +38,19 @@ export type OrderStatus =
 
 export interface CustomerInfo {
   name: string;
-  phone: string;
+  email: string;
+  phone?: string; // Opcional
+  cpf?: string;   // Opcional
 }
 
 export interface PixPaymentData {
-  invoiceId: string;
-  qrCode: string;
-  qrCodeImageUrl: string;
-  paymentUrl: string;
+  transactionId: number; // ID numérico da Orion
+  uuid: string;          // ID alfanumérico (campo "id")
+  pixCode: string;       // Código Copia e Cola
+  qrCodeImageUrl: string;// URL da imagem
   expiresAt: string;
   price: number;
+  status: string;
 }
 
 export interface DeliveryAddress {

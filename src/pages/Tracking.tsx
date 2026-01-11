@@ -11,9 +11,15 @@ const Tracking = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { currentOrder, setCurrentOrder, updateOrderStatus } = useCart();
-  const [simulatedStatus, setSimulatedStatus] = useState<OrderStatus>('confirmed');
+  
+  // Inicializa com o status real do pedido, não hardcoded
+  const [simulatedStatus, setSimulatedStatus] = useState<OrderStatus>(
+    currentOrder?.status || 'confirmed'
+  );
 
-  // Simulate order status progression
+  // --- SIMULAÇÃO DESATIVADA ---
+  // O código abaixo avançava o pedido automaticamente. Comentei para usar status real.
+  /*
   useEffect(() => {
     if (!currentOrder) return;
 
@@ -21,47 +27,26 @@ const Tracking = () => {
       ? ['confirmed', 'preparing', 'ready', 'out_for_delivery', 'delivered']
       : ['confirmed', 'preparing', 'ready'];
 
-    let currentIndex = 0;
+    let currentIndex = 0; // Isso reiniciava o fluxo sempre que montava o componente
 
     const interval = setInterval(() => {
-      if (currentIndex < statusFlow.length - 1) {
-        currentIndex++;
-        const newStatus = statusFlow[currentIndex];
-        setSimulatedStatus(newStatus);
-        updateOrderStatus(currentOrder.id, newStatus);
-        setCurrentOrder({ ...currentOrder, status: newStatus });
-      } else {
-        clearInterval(interval);
-      }
-    }, 8000); // Progress every 8 seconds for demo
+       // Lógica de avanço removida
+    }, 8000); 
 
     return () => clearInterval(interval);
   }, []);
+  */
 
   const handleArrived = () => {
     if (currentOrder) {
       const newStatus: OrderStatus = 'waiting_pickup';
       setSimulatedStatus(newStatus);
       updateOrderStatus(currentOrder.id, newStatus);
-      setCurrentOrder({ ...currentOrder, status: newStatus });
       
       toast({
         title: 'Notificamos a equipe! 🚗',
         description: 'Seu pedido será entregue em instantes',
       });
-
-      // Simulate completion
-      setTimeout(() => {
-        const completedStatus: OrderStatus = 'completed';
-        setSimulatedStatus(completedStatus);
-        updateOrderStatus(currentOrder.id, completedStatus);
-        setCurrentOrder({ ...currentOrder, status: completedStatus });
-        
-        toast({
-          title: 'Pedido entregue! 🎉',
-          description: 'Obrigado pela preferência',
-        });
-      }, 5000);
     }
   };
 
@@ -81,7 +66,12 @@ const Tracking = () => {
     );
   }
 
-  const displayOrder = { ...currentOrder, status: simulatedStatus };
+  // Se o pedido no contexto atualizar, atualiza o local
+  useEffect(() => {
+    if (currentOrder) {
+      setSimulatedStatus(currentOrder.status);
+    }
+  }, [currentOrder?.status]);
 
   return (
     <div className="min-h-screen bg-background pb-8">
@@ -101,11 +91,11 @@ const Tracking = () => {
 
       <div className="container py-6 max-w-md mx-auto">
         <OrderTracking 
-          order={displayOrder}
+          order={currentOrder} // Passa o objeto direto do contexto
           onArrived={handleArrived}
         />
 
-        {(displayOrder.status === 'delivered' || displayOrder.status === 'completed') && (
+        {(currentOrder.status === 'delivered' || currentOrder.status === 'completed') && (
           <div className="mt-6 space-y-3">
             <Button
               variant="outline"

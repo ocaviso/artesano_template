@@ -1,11 +1,15 @@
-import { useState, useCallback } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { PixPayment } from '@/components/PixPayment';
 import { useCart } from '@/context/CartContext';
 import { Order, PixPaymentData } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+
+// Configuração do Proxy
+const PROXY_URL = "/api/orion/api/v1/pix"; 
+const API_KEY = "opay_1c67aaf9edc1084d163f27e0f07d441fb1e8d49ba8bfc1971a71683880f37979";
 
 const Payment = () => {
   const navigate = useNavigate();
@@ -21,37 +25,127 @@ const Payment = () => {
     addOrder
   } = useCart();
 
+  const [loading, setLoading] = useState(false);
+  const [pixData, setPixData] = useState<PixPaymentData | null>(null);
+  
+  // Controle de Polling
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const isPollingActive = useRef(false);
+
   const deliveryFee = deliveryType === 'delivery' ? 5.90 : 0;
-  const finalTotal = total + deliveryFee;
+  const finalTotal = parseFloat((total + deliveryFee).toFixed(2));
 
-  // Generate mock Pix payment data
-  const [pixData] = useState<PixPaymentData>(() => ({
-    invoiceId: `inv_${Date.now()}`,
-    qrCode: `00020126580014BR.GOV.BCB.PIX0136${crypto.randomUUID()}5204000053039865802BR5913SmashFast6009SAO PAULO62070503***6304${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
-    qrCodeImageUrl: '',
-    paymentUrl: 'https://pixwave.cash/pay/demo',
-    expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
-    price: finalTotal,
-  }));
-
-  const handlePaymentConfirmed = useCallback(() => {
-    const orderId = `ORD-${Date.now().toString(36).toUpperCase()}`;
-    const estimatedMinutes = deliveryType === 'delivery' ? 35 : 20;
+  // --- CRIAÇÃO DO PIX ---
+  const createPixCharge = async () => {
+    if (pixData || loading) return;
     
+    // Validação
+    if (!customerInfo?.email || !customerInfo.name) {
+      console.warn("Dados do cliente incompletos:", customerInfo);
+      toast({ title: "Dados incompletos", description: "Nome e Email são obrigatórios.", variant: "destructive" });
+      navigate('/checkout');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const payload: Record<string, any> = {
+        amount: finalTotal,
+        name: customerInfo.name,
+        email: customerInfo.email,
+        description: `Pedido SmashFast`,
+      };
+
+      // Adiciona opcionais apenas se existirem
+      if (customerInfo.cpf) payload.cpf = customerInfo.cpf;
+      if (customerInfo.phone) payload.phone = customerInfo.phone;
+
+      console.log("🔵 [Payment] Iniciando criação do PIX. Payload:", payload);
+
+      // Usando rota /personal (conforme sucesso no Python)
+      const response = await fetch(`${PROXY_URL}/personal`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': API_KEY
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("🔴 [Payment] Erro na resposta da API:", response.status, errorText);
+        throw new Error(`Erro API: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log("🟢 [Payment] Resposta PIX Criado:", result);
+
+      if (result.success && result.data) {
+        const newPixData = {
+          transactionId: result.data.transactionId,
+          uuid: result.data.id,
+          pixCode: result.data.pixCode,
+          qrCodeImageUrl: result.data.qrCode,
+          expiresAt: result.data.expiresAt,
+          price: parseFloat(result.data.amount),
+          status: result.data.status
+        };
+        setPixData(newPixData);
+        console.log("✅ [Payment] Estado atualizado com PixData:", newPixData);
+      } else {
+        throw new Error('API retornou sucesso: false ou sem dados');
+      }
+
+    } catch (error) {
+      console.error("🔴 [Payment] Erro fatal:", error);
+      toast({
+        title: "Erro ao gerar pagamento",
+        description: "Não foi possível conectar ao servidor de pagamento.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Trigger inicial
+  useEffect(() => {
+    if (items.length > 0 && !pixData) {
+      createPixCharge();
+    }
+  }, [items.length]); // Dependências reduzidas para evitar loops
+
+  // --- FINALIZAÇÃO DO PEDIDO ---
+  const handlePaymentConfirmed = useCallback(() => {
+    console.log("🎉 [Payment] Pagamento Confirmado! Finalizando pedido...");
+    
+    // Para o polling imediatamente
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+    isPollingActive.current = false;
+
+    const orderId = `ORD-${Date.now().toString(36).toUpperCase()}`;
+    const estimatedMinutes = deliveryType === 'delivery' ? 45 : 20; // Ajuste de estimativa
+    
+    // Cria data de entrega estimada real
+    const estimatedDate = new Date();
+    estimatedDate.setMinutes(estimatedDate.getMinutes() + estimatedMinutes);
+
     const newOrder: Order = {
       id: orderId,
       items: [...items],
       total: finalTotal,
-      status: 'confirmed',
+      status: 'confirmed', // Começa como confirmado
       createdAt: new Date(),
       deliveryType,
-      address: deliveryAddress ? 
-        `${deliveryAddress.street}, ${deliveryAddress.number} - ${deliveryAddress.neighborhood}` : 
-        undefined,
+      address: deliveryAddress ? `${deliveryAddress.street}, ${deliveryAddress.number}` : undefined,
       customerInfo: customerInfo || undefined,
       paymentStatus: 'paid',
-      estimatedDelivery: new Date(Date.now() + estimatedMinutes * 60 * 1000),
-      pixData,
+      estimatedDelivery: estimatedDate,
+      pixData: pixData!,
     };
 
     addOrder(newOrder);
@@ -60,18 +154,60 @@ const Payment = () => {
 
     toast({
       title: 'Pagamento confirmado! 🎉',
-      description: 'Seu pedido está sendo preparado',
+      description: 'Seu pedido foi enviado para a cozinha.',
     });
 
     navigate('/tracking');
   }, [items, finalTotal, deliveryType, deliveryAddress, customerInfo, pixData, addOrder, setCurrentOrder, clearCart, toast, navigate]);
 
+  // --- POLLING DE STATUS ---
+  useEffect(() => {
+    // Só inicia se tivermos um transactionId e o polling não estiver ativo
+    if (!pixData?.transactionId || isPollingActive.current) return;
+
+    console.log("⏳ [Payment] Iniciando verificação de status para ID:", pixData.transactionId);
+    isPollingActive.current = true;
+
+    const checkStatus = async () => {
+      try {
+        const response = await fetch(`${PROXY_URL}/status/${pixData.transactionId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': API_KEY
+          }
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log(`📡 [Payment] Status Check [${pixData.transactionId}]:`, result.status);
+          
+          if (result.success && (result.status === 'COMPLETED')) {
+            handlePaymentConfirmed();
+          }
+        }
+      } catch (error) {
+        console.error("⚠️ [Payment] Erro no polling:", error);
+      }
+    };
+
+    // Primeira verificação rápida
+    // checkStatus();
+
+    // Intervalo de 5 segundos
+    pollingRef.current = setInterval(checkStatus, 10000);
+
+    return () => {
+      console.log("🛑 [Payment] Limpando polling...");
+      if (pollingRef.current) clearInterval(pollingRef.current);
+      isPollingActive.current = false;
+    };
+  }, [pixData, handlePaymentConfirmed]);
+
+  // Handle Expired
   const handleExpired = useCallback(() => {
-    toast({
-      title: 'Código Pix expirado',
-      description: 'Gere um novo código para continuar',
-      variant: 'destructive',
-    });
+    if (pollingRef.current) clearInterval(pollingRef.current);
+    toast({ title: 'Expirou', description: 'Gere um novo pagamento', variant: 'destructive' });
     navigate('/checkout');
   }, [toast, navigate]);
 
@@ -84,11 +220,7 @@ const Payment = () => {
     <div className="min-h-screen bg-background pb-8">
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b">
         <div className="container flex items-center h-16 gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-          >
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="font-heading font-semibold text-lg">Pagamento</h1>
@@ -96,11 +228,23 @@ const Payment = () => {
       </header>
 
       <div className="container py-6 max-w-md mx-auto">
-        <PixPayment
-          paymentData={pixData}
-          onPaymentConfirmed={handlePaymentConfirmed}
-          onExpired={handleExpired}
-        />
+        {loading || !pixData ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-4">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Gerando PIX com a Orion...</p>
+          </div>
+        ) : (
+          <PixPayment
+            paymentData={{
+              qrCode: pixData.pixCode, 
+              qrCodeImageUrl: pixData.qrCodeImageUrl,
+              expiresAt: pixData.expiresAt,
+              price: pixData.price
+            }}
+            onPaymentConfirmed={handlePaymentConfirmed}
+            onExpired={handleExpired}
+          />
+        )}
       </div>
     </div>
   );

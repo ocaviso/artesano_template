@@ -38,20 +38,27 @@ export function MenuItemCard({ item }: MenuItemCardProps) {
       quantity > 0 && "ring-2 ring-primary/50"
     )}>
       <div className="relative aspect-[4/3] bg-muted overflow-hidden">
-        <div className="absolute inset-0 flex items-center justify-center text-6xl">
-          {item.category === 'burgers' && '🍔'}
-          {item.category === 'sides' && '🍟'}
-          {item.category === 'drinks' && '🥤'}
-          {item.category === 'desserts' && '🍫'}
-        </div>
+        {/* CORREÇÃO: Substituído emojis pela tag img */}
+        <img 
+          src={item.image} 
+          alt={item.name}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          onError={(e) => {
+            // Fallback visual caso a imagem não carregue
+            e.currentTarget.style.display = 'none';
+            e.currentTarget.parentElement?.classList.add('flex', 'items-center', 'justify-center');
+            e.currentTarget.parentElement!.innerHTML += `<span class="text-4xl">🍔</span>`;
+          }}
+        />
+        
         {item.popular && (
-          <Badge className="absolute top-2 left-2 gap-1 bg-secondary text-secondary-foreground border-0">
+          <Badge className="absolute top-2 left-2 gap-1 bg-secondary text-secondary-foreground border-0 z-10">
             <Star className="w-3 h-3 fill-current" />
             Popular
           </Badge>
         )}
         {quantity > 0 && (
-          <div className="absolute top-2 right-2 w-6 h-6 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
+          <div className="absolute top-2 right-2 w-6 h-6 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground z-10">
             {quantity}
           </div>
         )}

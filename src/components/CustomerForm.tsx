@@ -5,15 +5,14 @@ import { useCart } from '@/context/CartContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { User, Phone } from 'lucide-react';
+import { User, Phone, Mail, FileText } from 'lucide-react';
 
 const customerSchema = z.object({
   name: z.string().trim().min(3, 'Informe seu nome completo'),
-  phone: z.string()
-    .trim()
-    .min(10, 'Telefone inválido')
-    .max(15, 'Telefone inválido')
-    .regex(/^\(?[1-9]{2}\)?\s?9?[0-9]{4}-?[0-9]{4}$/, 'Telefone inválido'),
+  email: z.string().email('Informe um e-mail válido'),
+  // .optional() permite que o campo seja undefined ou string vazia se não preenchido
+  phone: z.string().optional(),
+  cpf: z.string().optional(),
 });
 
 type CustomerFormData = z.infer<typeof customerSchema>;
@@ -34,14 +33,19 @@ export function CustomerForm({ onSubmit }: CustomerFormProps) {
     mode: 'onChange',
     defaultValues: {
       name: '',
+      email: '',
       phone: '',
+      cpf: '',
     },
   });
 
   const handleFormSubmit = (data: CustomerFormData) => {
     setCustomerInfo({
       name: data.name,
-      phone: data.phone,
+      email: data.email,
+      // Envia undefined se a string estiver vazia
+      phone: data.phone || undefined,
+      cpf: data.cpf || undefined,
     });
     onSubmit();
   };
@@ -55,37 +59,56 @@ export function CustomerForm({ onSubmit }: CustomerFormProps) {
         <h3 className="font-heading font-semibold">Seus Dados</h3>
       </div>
 
-      <p className="text-sm text-muted-foreground">
-        Informe seus dados para contato e identificação no drive-thru.
-      </p>
-
       <div className="space-y-1.5">
-        <Label htmlFor="name">Nome Completo</Label>
+        <Label htmlFor="name">Nome Completo *</Label>
         <Input
           id="name"
           placeholder="Ex: João Silva"
           {...register('name')}
           className={errors.name ? 'border-destructive' : ''}
         />
-        {errors.name && (
-          <p className="text-xs text-destructive">{errors.name.message}</p>
-        )}
+        {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="phone">Telefone / WhatsApp</Label>
+        <Label htmlFor="email">E-mail *</Label>
+        <div className="relative">
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            id="email"
+            type="email"
+            placeholder="seu@email.com"
+            {...register('email')}
+            className={`pl-10 ${errors.email ? 'border-destructive' : ''}`}
+          />
+        </div>
+        {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="cpf">CPF (Opcional)</Label>
+        <div className="relative">
+          <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            id="cpf"
+            placeholder="000.000.000-00"
+            {...register('cpf')}
+            className="pl-10"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="phone">Telefone (Opcional)</Label>
         <div className="relative">
           <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             id="phone"
             placeholder="(11) 99999-9999"
             {...register('phone')}
-            className={`pl-10 ${errors.phone ? 'border-destructive' : ''}`}
+            className="pl-10"
           />
         </div>
-        {errors.phone && (
-          <p className="text-xs text-destructive">{errors.phone.message}</p>
-        )}
       </div>
 
       <Button

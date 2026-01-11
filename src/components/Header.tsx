@@ -1,11 +1,12 @@
-import { ShoppingCart, MapPin, Clock } from 'lucide-react';
+import { ShoppingCart, MapPin, Clock, Loader2, Navigation } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 
 export function Header() {
-  const { itemCount, total } = useCart();
+  const { itemCount, total, userLocation, detectUserLocation, isLocating } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -23,7 +24,7 @@ export function Header() {
           </div>
           <div>
             <h1 className="font-heading font-bold text-lg leading-tight">
-              Smash<span className="text-primary">Fast</span>
+              Artesano<span className="text-primary">Burger</span>
             </h1>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Clock className="w-3 h-3" />
@@ -32,10 +33,30 @@ export function Header() {
           </div>
         </div>
 
-        <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
-          <MapPin className="w-4 h-4 text-primary" />
-          <span>Entrega para sua região</span>
+        {/* --- INÍCIO DA MUDANÇA: COMPONENTE DE LOCALIZAÇÃO --- */}
+        <div 
+          className={cn(
+            "hidden md:flex items-center gap-2 text-sm transition-all cursor-pointer px-3 py-1.5 rounded-full hover:bg-muted group select-none",
+            userLocation ? "text-foreground font-medium" : "text-muted-foreground"
+          )}
+          onClick={detectUserLocation}
+          title={userLocation ? "Localização atual" : "Clique para detectar sua localização"}
+        >
+          {isLocating ? (
+            <Loader2 className="w-4 h-4 text-primary animate-spin" />
+          ) : userLocation ? (
+            <MapPin className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
+          ) : (
+            <Navigation className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
+          )}
+          
+          <span className="max-w-[200px] truncate">
+            {isLocating 
+              ? "Localizando..." 
+              : userLocation || "Onde você está?"}
+          </span>
         </div>
+        {/* --- FIM DA MUDANÇA --- */}
 
         {!isCartPage && (
           <Button

@@ -26,7 +26,7 @@ const Index = () => {
             <div className="flex items-center gap-2 mb-2">
               <Flame className="w-5 h-5 text-secondary" />
               <span className="text-primary-foreground/90 text-sm font-medium">
-                Smash Burgers Artesanais
+              Todos os nossos lanches acompanham a nossa famosa Maionese Verde Secreta da Casa, produzida diariamente com ervas frescas e um toque defumado.
               </span>
             </div>
             <h2 className="font-heading font-bold text-2xl md:text-3xl text-primary-foreground mb-2">
